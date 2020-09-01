@@ -6,6 +6,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System.Linq;
+using BlazingPizza.Server.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace BlazingPizza.Server {
     public class Startup {
@@ -19,6 +21,10 @@ namespace BlazingPizza.Server {
         // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
         public void ConfigureServices(IServiceCollection services) {
 
+            services.AddDbContext<PizzaStoreContext>(options => 
+            {
+                options.UseSqlServer(Configuration.GetConnectionString("PizzaStoreContext"));
+            });
             services.AddControllersWithViews();
             services.AddRazorPages();
         }

@@ -1,0 +1,72 @@
+﻿@page "/myorders/{OrderId:int}"
+@inject HttpClient HttpClient
+@using System.Threading
+@implements IDisposable
+
+<div class="main">
+    @if (InvalidOrder) {
+        <h2>Esta orden es invalida.</h2>
+    } else if (orderWithStatus == null) {
+        <text>Carcando...</text>
+    } else {
+        <div class="track-order">
+            <div class="track-order-title">
+                <h2>Pedido realizado @orderWithStatus.Order.GetFormattedCreatedTime()</h2>
+                <p class="ml-auto mb-0">Estatus: <strong>@orderWithStatus.StatusText</strong></p>
+            </div>
+            <div class="track-order-body">
+                <div class="track-order-details">
+                    <OrderReview Order="orderWithStatus.Order"/>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+
+
+@code {
+
+    [Parameter] public int OrderId { get; set; }
+
+    OrderWithStatus orderWithStatus;
+    bool InvalidOrder;
+
+    CancellationTokenSource PollingCancelationToken;
+
+    private async void PollForUpdates() {
+        PollingCancelationToken = new CancellationTokenSource();
+
+        while (!PollingCancelationToken.IsCancellationRequested) {
+
+            try {
+
+                InvalidOrder = false;
+                orderWithStatus = await HttpClient.GetFromJsonAsync<OrderWithStatus>($"orders/{OrderId}");
+                if (orderWithStatus.StatusText == "Entregado") { //Dejar de acctualizar cuando se entrege la orden
+                    StateHasChanged();
+                    PollingCancelationToken.Cancel();
+                }
+
+            } catch (Exception ex) {
+
+                InvalidOrder = true;
+                PollingCancelationToken.Cancel();
+                Console.Error.WriteLine(ex);
+
+            }
+            StateHasChanged();
+            await Task.Delay(4000);
+        }
+    }
+
+    protected override void OnParametersSet() {
+        PollingCancelationToken?.Cancel();
+        PollForUpdates();
+    }
+
+    void IDisposable.Dispose() {
+        PollingCancelationToken?.Cancel();
+    }
+
+}

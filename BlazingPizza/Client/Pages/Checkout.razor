@@ -2,28 +2,59 @@
 @inject OrderState OrderState
 @inject NavigationManager NavigationManager
 @inject HttpClient HttpClient
+@inject IJSRuntime JSRuntime
 
 <div class="main">
-    <EditForm Model="OrderState.Order.DeliveryAddress" OnValidSubmit="PlaceOrder">
-        <div class="checkout-cols">
-            <div class="checkout-order-details">
-                <h4>Revisar la orden</h4>
-                <OrderReview Order="OrderState.Order" />
-            </div>
-            <div>
-                <h4>Enviar a:</h4>
-                <AddressEditor Address="OrderState.Order.DeliveryAddress" />
-            </div>
+    <AuthorizeView Context="AuthContext">
+        <NotAuthorized>
+            <h2>Redirigiendo...</h2>
+        </NotAuthorized>
+        <Authorized>
+            <EditForm Model="OrderState.Order.DeliveryAddress" OnValidSubmit="PlaceOrder">
+                <div class="checkout-cols">
+                    <div class="checkout-order-details">
+                        <h4>Revisar la orden</h4>
+                        <OrderReview Order="OrderState.Order" />
+                    </div>
+                    <div>
+                        <h4>Enviar a:</h4>
+                        <AddressEditor Address="OrderState.Order.DeliveryAddress" />
+                    </div>
 
-        </div>
-        <button type="submit" disabled="@OrderPlaced" class="checkout-button btn btn-warning">
-            Aceptar Orden
-        </button>
-        <DataAnnotationsValidator/>
-    </EditForm>
+                </div>
+                <button type="submit" disabled="@OrderPlaced" class="checkout-button btn btn-warning">
+                    Aceptar Orden
+                </button>
+                <DataAnnotationsValidator />
+            </EditForm>
+        </Authorized>
+    </AuthorizeView>
+    
 </div>
 
 @code {
+
+    [CascadingParameter] public Task<AuthenticationState> AuthenticationStateTask { get; set; }
+
+    protected override async Task OnInitializedAsync() {
+        var AuthState = await AuthenticationStateTask;
+
+        if (!AuthState.User.Identity.IsAuthenticated) {
+
+            await LocalStorage.SetAsync(JSRuntime, "currentorden", OrderState.Order);
+
+            NavigationManager.NavigateTo("user/signin?redirectUri=checkout" , true);
+        }
+        if (OrderState.Order.Pizzas.Count < 1) {
+            var SavedOrder = await LocalStorage.GetAsync<Order>(JSRuntime , "currentorden");
+            if (SavedOrder != null) {
+                OrderState.ReplaceOrder(SavedOrder);
+                await LocalStorage.DeleteAsync(JSRuntime , "currentorden");
+            } else {
+                NavigationManager.NavigateTo("");
+            }
+        }
+    }
 
     bool OrderPlaced = false;
 

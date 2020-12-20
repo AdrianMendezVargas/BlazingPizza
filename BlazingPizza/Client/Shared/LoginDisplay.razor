@@ -1,0 +1,21 @@
+﻿<div class="user-info">
+    <AuthorizeView>
+        <Authorizing>
+            <p>Autorizando...</p>
+        </Authorizing>
+        <Authorized>
+            <img src="images/user.svg"/>
+            <div>
+                <span class="username">@context.User.Identity.Name</span>
+                <a href="user/signout" class="sign-out">Cerrar sesión</a>
+            </div>
+        </Authorized>
+        <NotAuthorized>
+            <a href="user/signin" class="sign-in">Iniciar sesión</a>
+        </NotAuthorized>
+    </AuthorizeView>
+</div>
+
+@code {
+
+}

@@ -1,5 +1,6 @@
 ﻿@page "/myorders"
 @inject HttpClient HttpClient
+@attribute [Authorize]
 
 <div class="main">
     @if (OrderWithStatus == null) {

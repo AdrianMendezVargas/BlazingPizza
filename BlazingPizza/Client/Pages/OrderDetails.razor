@@ -1,13 +1,14 @@
 ﻿@page "/myorders/{OrderId:int}"
+@attribute [Authorize]
+@implements IDisposable
 @inject HttpClient HttpClient
 @using System.Threading
-@implements IDisposable
 
 <div class="main">
     @if (InvalidOrder) {
         <h2>Esta orden es invalida.</h2>
     } else if (orderWithStatus == null) {
-        <text>Carcando...</text>
+        <text>Cargando...</text>
     } else {
         <div class="track-order">
             <div class="track-order-title">

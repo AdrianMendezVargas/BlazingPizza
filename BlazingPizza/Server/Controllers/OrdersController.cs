@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using BlazingPizza.Server.Models;
 using BlazingPizza.Shared;
@@ -27,6 +28,7 @@ namespace BlazingPizza.Server.Controllers {
 
             order.CreatedTime = DateTime.Now;
             order.DeliveryLocation = new LatLong() { Latitude = 19.275673 , Longitude = -70.256430 };
+            order.UserId = GetUserId();
 
             foreach (var Pizza in order.Pizzas) {
                 Pizza.SpecialId = Pizza.Special.Id;
@@ -46,6 +48,7 @@ namespace BlazingPizza.Server.Controllers {
         [HttpGet]
         public async Task<ActionResult<List<OrderWithStatus>>> GetOrders() {
             var Orders = await Context.Orders
+                .Where(o => o.UserId == GetUserId())
                 .Include(o => o.DeliveryLocation)
                 .Include(o => o.Pizzas).ThenInclude(p => p.Special)
                 .Include(o => o.Pizzas).ThenInclude(p => p.Toppings).ThenInclude(t => t.Topping)
@@ -58,7 +61,9 @@ namespace BlazingPizza.Server.Controllers {
         [HttpGet("{orderId}")]
         public async Task<ActionResult<OrderWithStatus>> GetOrderWithStatus(int orderId) {
 
-            var order = await Context.Orders.Where(o => o.OrderId == orderId)
+            var order = await Context.Orders
+                .Where(o => o.UserId == GetUserId())
+                .Where(o => o.OrderId == orderId)
                 .Include(o => o.DeliveryLocation)
                 .Include(o => o.Pizzas).ThenInclude(p => p.Special)
                 .Include(o => o.Pizzas).ThenInclude(p => p.Toppings).ThenInclude(t => t.Topping)
@@ -70,6 +75,10 @@ namespace BlazingPizza.Server.Controllers {
                 return OrderWithStatus.FromOrder(order);
             }
 
+        }
+
+        private string GetUserId() {
+            return User.FindFirst(ClaimTypes.Name)?.Value;
         }
        
 

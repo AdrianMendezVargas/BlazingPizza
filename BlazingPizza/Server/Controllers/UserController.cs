@@ -26,6 +26,10 @@ namespace BlazingPizza.Server.Controllers {
         [HttpGet("user/signin")]
         public async Task SignIn(string redirectUri) {
 
+            if (string.IsNullOrEmpty(redirectUri) ) {
+                redirectUri = "/";
+            }
+
             await HttpContext.ChallengeAsync(TwitterDefaults.AuthenticationScheme ,
                 new AuthenticationProperties { RedirectUri = redirectUri });
 
